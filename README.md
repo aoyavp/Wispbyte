@@ -1,0 +1,148 @@
+# ⭐ Star 一下支持项目 ⭐
+
+> 动动发财手点点 Star ⭐
+
+基于 **Cloudflare Workers** 部署的 **Wispbyte 多账号自动重启** 脚本（Cookie 被动续期版）
+
+---
+
+## 📌 功能说明
+
+* ✅ 多账号自动重启所有服务器，保持服务在线  
+* ✅ Cookie **被动续期**：无需重复登录，请求时自动刷新有效期  
+* ✅ 定时 Cron 触发，全量扫描并重启  
+* ✅ 网页管理面板，可查看/添加/删除账号，手动更新 Cookie  
+* ✅ 单账号/批量重启，状态实时反馈  
+* ✅ Telegram **汇总报告**：所有账号执行完毕后一次性发送，无垃圾通知  
+* ✅ 自动发现账号下的服务器（从页面智能提取 8 位 ID）  
+* ✅ Cookie 过期提醒（报告中标注，面板显示红标）
+
+---
+
+## ⚠️ 注意事项
+
+> ❗ 本工具依赖 Wispbyte 面板的 Cookie 维持会话，**未集成自动登录**（因 CF 验证限制）  
+> ❗ Cookie 被动续期依赖网站返回的 `Set-Cookie` 响应头，若网站不返回新 Cookie，则无法续期  
+> ❗ 当 Cookie 真正过期（无效）时，需**手动打开面板更新 Cookie**，否则无法重启对应账号的服务器  
+
+---
+
+## 📝 注册地址
+
+👉 https://wispbyte.com
+
+---
+
+## 🚀 部署方式
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)，进入 **Workers & Pages**  
+2. 创建一个新的 Worker，将 [`worker.js`](./worker.js) 代码粘贴进去  
+3. 创建 **KV 命名空间**（名称随意），在 Worker 设置中绑定，变量名为 `WISPBYTE_KV`  
+4. 配置环境变量（见下表）  
+5. 部署 Worker  
+
+---
+
+## 🔧 环境变量配置
+
+| 变量名               | 说明                         |
+| -------------------- | ---------------------------- |
+| `AUTH_KEY`           | 管理面板与 API 的密钥        |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token（可选）   |
+| `TELEGRAM_CHAT_ID`   | Telegram Chat ID（可选）     |
+
+账号数据存储在 **KV** 的 `wispbyte_accounts` 键中。部署后通过管理面板添加账号。
+
+---
+
+## ⏰ 定时任务（Cron）
+
+在 Cloudflare Workers 的 **Triggers** 中添加 Cron Trigger，建议每天执行一次，例如：
+
+```
+0 0 * * *
+```
+
+👉 每天自动重启所有账号下的全部服务器，执行完毕后发送一条 Telegram 汇总报告。
+
+> ⚠️ **免费计划限制**：每个 Cloudflare 账户最多可设置 **5 个 Cron 触发器**。如有需要，可使用外部 Cron 服务（如 [cron-job.org](https://cron-job.org/)）调用 API 触发。
+
+---
+
+## 🌐 使用方式
+
+### 1️⃣ 浏览器管理面板（推荐）
+
+```
+https://你的域名?key=设置的AUTH_KEY
+```
+
+面板功能：
+
+* **🔐 密钥认证**：页面顶部输入 `AUTH_KEY` 解锁全部功能  
+* **➕ 添加账号**：邮箱 + Cookie，支持批量粘贴  
+* **👥 账号列表**：显示邮箱、Cookie 长度、上次更新时间，Cookie 新鲜度（绿色/黄色/红色标记）  
+* **🔄 单账号重启**：点击账号旁的“重启”按钮，立即执行该账号下所有服务器重启，页面显示成功/失败数量  
+* **🔄 全部重启**：点击顶部按钮，批量执行所有账号，页面显示汇总结果  
+* **🍪 更新 Cookie**：弹出窗口手动粘贴新 Cookie，刷新令牌状态  
+* **🗑️ 删除账号**：点击删除按钮，确认后移除  
+* **📊 统计卡片**：显示账号总数、服务器总数、当前状态
+
+---
+
+### 2️⃣ API 触发全部账号重启
+
+```bash
+curl "https://你的域名/restart-all?key=你的AUTH_KEY"
+```
+
+---
+
+### 3️⃣ API 触发指定账号重启
+
+```bash
+curl "https://你的域名/restart?account=admin@@gmail.com&key=你的AUTH_KEY"
+```
+
+可选参数 `server` 指定单个服务器 ID（8 位十六进制）。
+
+---
+
+## 💬 Telegram 通知说明
+
+配置 `TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID` 后：
+
+* ✅ 定时任务（Cron）或面板批量重启完成后，**只发送一条汇总报告**  
+* ❌ 单个账号手动重启 **不会** 发送通知（页面直接显示结果）  
+* ✅ 报告格式示例：
+
+```
+📊 重启报告
+
+账号: admin@@gmail.com
+⚠️ Cookie 过期
+
+账号: admin1@gmail.com
+服务器: fbi0773
+✅ 重启成功
+
+账号: admin2@gmail.com
+服务器: 31fbi73
+❌ 重启失败
+
+Wispbyte Auto Restart
+```
+
+---
+
+## ❤️ 支持项目
+
+如果这个项目对你有帮助：
+
+👉 点个 **Star ⭐** 支持一下吧！
+
+---
+
+## ⚠️ 免责声明
+
+本项目仅供学习研究使用。使用本脚本产生的任何后果由使用者自行承担。请遵守 Wispbyte 的服务条款。
